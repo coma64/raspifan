@@ -5,14 +5,14 @@ import (
 	"periph.io/x/conn/v3/gpio"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/host/v3"
-	"periph.io/x/host/v3/rpi"
+	"periph.io/x/host/v3/bcm283x"
 	"raspifan/client"
 	"raspifan/config"
 )
 
 var (
-	pinAlwaysOn = rpi.P1_33
-	pinPwm      = rpi.P1_32
+	pinAlwaysOn = bcm283x.GPIO2
+	pinPwm      = bcm283x.GPIO12
 )
 
 func turnFanOn() {
