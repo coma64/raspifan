@@ -15,7 +15,7 @@ build-arm: make-build-folder
 
 execute-on-raspi: create-remote-folder copy-to-raspi copy-config-to-raspi
 	# Führt immer alte versionen aus??
-	ssh $(pi_name) 'cd $(remote_path) && ./$(arm_name)'
+	ssh $(pi_name) 'cd $(remote_path) && sudo ./$(arm_name)'
 
 create-remote-folder:
 	ssh $(pi_name) mkdir -p $(remote_path)
