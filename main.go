@@ -5,11 +5,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"os/signal"
 	"periph.io/x/conn/v3/gpio"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/host/v3"
 	"periph.io/x/host/v3/bcm283x"
 	"raspifan/client"
+	"syscall"
 )
 
 var (
@@ -59,14 +61,23 @@ func main() {
 		panic(err)
 	}
 
-	for temperature := range temperatures {
-		fanSpeed := calcFanSpeed(temperature)
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-		log.Debug().
-			Int64("temperature", int64(temperature)).
-			Int64("newFanSpeed", fanSpeed).
-			Msg("Received temperature")
+	for {
+		select {
+		case <-interrupt:
+			setFanSpeed(gpio.Duty(0))
+			return
+		case temperature := <-temperatures:
+			fanSpeed := calcFanSpeed(temperature)
 
-		setFanSpeed(gpio.DutyMax / 100_000 * gpio.Duty(fanSpeed))
+			log.Debug().
+				Int64("temperature", int64(temperature)).
+				Int64("newFanSpeed", fanSpeed).
+				Msg("Received temperature")
+
+			setFanSpeed(gpio.DutyMax / 100_000 * gpio.Duty(fanSpeed))
+		}
 	}
 }
