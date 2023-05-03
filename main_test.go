@@ -18,7 +18,7 @@ func TestCalcFanSpeed(t *testing.T) {
 		t.Fatalf("Fan should be at full power at 41 degrees; Got speed: %d", speed)
 	}
 
-	if speed := calcFanSpeed(30 * client.OneDegree); speed > 0 && speed < 100_000 {
+	if speed := calcFanSpeed(30 * client.OneDegree); speed < 0 || speed > 100_000 {
 		t.Fatalf("Fan should be in between 0%% and 100%% at 30 degree; Got spedd: %d", speed)
 	}
 }

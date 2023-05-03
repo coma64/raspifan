@@ -24,7 +24,7 @@ func setFanSpeed(fanSpeed gpio.Duty) {
 }
 
 func calcFanSpeed(temperature client.Celsius) int64 {
-	speed := int64((temperature - 20*client.OneDegree) * 5 * client.OneDegree)
+	speed := int64((temperature - 20*client.OneDegree) * 5)
 	if speed > 100*1_000 {
 		speed = 100 * 1_000
 	} else if speed < 0 {
