@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"os"
 	"periph.io/x/conn/v3/gpio"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/host/v3"
 	"periph.io/x/host/v3/bcm283x"
 	"raspifan/client"
-	"raspifan/config"
 )
 
 var (
@@ -15,19 +17,26 @@ var (
 	pinPwm      = bcm283x.GPIO12
 )
 
-func turnFanOn() {
-	if err := pinPwm.PWM(gpio.DutyMax/100*gpio.Duty(config.Config.FanSpeed), physic.KiloHertz); err != nil {
+func setFanSpeed(fanSpeed gpio.Duty) {
+	if err := pinPwm.PWM(fanSpeed, physic.KiloHertz); err != nil {
 		panic(err)
 	}
 }
 
-func turnFanOff() {
-	if err := pinPwm.PWM(gpio.Duty(0), physic.KiloHertz); err != nil {
-		panic(err)
+func calcFanSpeed(temperature client.Celsius) int64 {
+	speed := int64((temperature - 20*client.OneDegree) * 5 * client.OneDegree)
+	if speed > 100*1_000 {
+		speed = 100 * 1_000
+	} else if speed < 0 {
+		speed = 0
 	}
+
+	return speed
 }
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	if state, err := host.Init(); err != nil {
 		panic(err)
 	} else {
@@ -50,20 +59,14 @@ func main() {
 		panic(err)
 	}
 
-	isFanOn := false
-	average := <-temperatures
 	for temperature := range temperatures {
-		average -= average / 10
-		average += temperature / 10
+		fanSpeed := calcFanSpeed(temperature)
 
-		fmt.Printf("Received temperature: %v C; Current average: %v C\n", temperature, average)
+		log.Debug().
+			Int64("temperature", int64(temperature)).
+			Int64("newFanSpeed", fanSpeed).
+			Msg("Received temperature")
 
-		if !isFanOn && average >= 25 {
-			isFanOn = true
-			turnFanOn()
-		} else if isFanOn && average < 25 {
-			isFanOn = false
-			turnFanOff()
-		}
+		setFanSpeed(gpio.DutyMax / 100_000 * gpio.Duty(fanSpeed))
 	}
 }

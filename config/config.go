@@ -7,7 +7,6 @@ type config struct {
 		URL   string
 		Topic string
 	}
-	FanSpeed int `yaml:"fan-speed"`
 }
 
 var Config = &config{}
